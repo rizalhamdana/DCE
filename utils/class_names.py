@@ -471,3 +471,12 @@ officehome_classnames = {
     63: "TV",
     64: "Webcam",
 }
+
+deforest_dil_classnames = {
+    0: 'subsistence_agriculture',
+    1: 'managed_forest_or_forestry',
+    2: 'commercial_agriculture',
+    3: 'other_natural_disturbances_or_no_tree-loss_driver',
+    4: 'commercial_oil_palm_or_other_palm_plantations',
+    5: 'pasture'
+}

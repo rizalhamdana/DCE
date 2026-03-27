@@ -233,7 +233,7 @@ class CORE50(object):
 
         return test_x, test_y
 
-    next = __next__  # python2.x compatibility.
+    # next = __next__  # python2.x compatibility.
 
     @staticmethod
     def get_batch_from_paths(paths, compress=False, snap_dir="", on_the_fly=True, verbose=False):

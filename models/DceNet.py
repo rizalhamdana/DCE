@@ -114,17 +114,36 @@ def _create_vision_transformer(variant, pretrained=False, **kwargs):
     if kwargs.get("features_only", None):
         raise RuntimeError("features_only not implemented for Vision Transformer models.")
 
-    pretrained_cfg = resolve_pretrained_cfg(
-        variant, pretrained_cfg=kwargs.pop("pretrained_cfg", None))
+    kwargs.pop("pretrained_cfg", None)
+    kwargs.pop("representation_size", None)
+    kwargs.pop("pretrained_filter_fn", None)
+
     model = build_model_with_cfg(
         ViT_Prompts,
         variant,
-        pretrained,
-        pretrained_cfg=pretrained_cfg,
-        pretrained_filter_fn=checkpoint_filter_fn,
-        pretrained_custom_load="npz" in pretrained_cfg["url"],
+        False,          # always False — load manually below
         **kwargs
     )
+
+    if pretrained:
+        import os
+        from huggingface_hub import hf_hub_download
+
+        cache_path = os.path.expanduser('~/.cache/torch/hub/checkpoints/vit_b16_augreg_in21k_ft_in1k.pth')
+        if not os.path.exists(cache_path):
+            print("[dce_vit] Downloading ViT-B/16 weights from HuggingFace...")
+            downloaded = hf_hub_download(
+                repo_id='timm/vit_base_patch16_224.augreg2_in21k_ft_in1k',
+                filename='pytorch_model.bin'
+            )
+            state_dict = torch.load(downloaded, map_location='cpu', weights_only=True)
+            torch.save(state_dict, cache_path)
+        else:
+            state_dict = torch.load(cache_path, map_location='cpu', weights_only=True)
+
+        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+        print(f"[dce_vit] Pretrained loaded — missing: {len(missing)}, unexpected: {len(unexpected)}")
+
     return model
 
 
@@ -154,6 +173,8 @@ class DceNet(nn.Module):
             self.class_num = 50
         elif args["dataset"] == "officehome":
             self.class_num = 65
+        elif args["dataset"] == "deforest_dil":
+            self.class_num = 6
         else:
             raise ValueError("Unknown datasets: {}.".format(args["dataset"]))
         self.prompt_type = args["prompt_type"]
